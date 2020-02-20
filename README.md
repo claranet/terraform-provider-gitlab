@@ -20,12 +20,29 @@ Requirements
 Building The Provider
 ---------------------
 
+This is a fork of the official Terraform Provider for Gitlab, with additional changes from Claranet.
+
+Most notably, this fork:
+
+- includes not yet released changes from the official provider.
+- adds the `gitlab_group_members` resource.
+- has its `master` branch on par with the upstream `master`, with no additional changes.
+- has its default branch set to `claranet`, which is where custom development happens.
+
+Unofficial tags made by Claranet are suffixed `-claranet`, and eventually an increment.
+They are based on the most recent upstream tag name on which the `claranet` branch was last rebased.
+
 Clone repository to: `$GOPATH/src/github.com/terraform-providers/terraform-provider-gitlab`
 
 ```sh
 $ mkdir -p $GOPATH/src/github.com/terraform-providers; cd $GOPATH/src/github.com/terraform-providers
 $ git clone git@github.com:terraform-providers/terraform-provider-gitlab
+$ cd terraform-provider-gitlab
+$ git remote rename origin upstream
+$ git remote add origin git@github.com:claranet/terraform-provider-gitlab
 ```
+
+Note: this is done in that order so that master tracks the upstream one.
 
 Enter the provider directory and build the provider
 
@@ -33,6 +50,19 @@ Enter the provider directory and build the provider
 $ cd $GOPATH/src/github.com/terraform-providers/terraform-provider-gitlab
 $ make build
 ```
+
+Rebasing The Provider
+---------------------
+
+```sh
+$ cd $GOPATH/src/github.com/terraform-providers/terraform-provider-gitlab
+$ git checkout master
+$ git pull
+$ git push origin master
+$ git checkout claranet
+$ git rebase upstream/master
+```
+
 
 Using the provider
 ----------------------
