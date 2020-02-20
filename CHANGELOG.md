@@ -74,6 +74,26 @@ ENHANCEMENTS:
 * Switched from Travis CI to Github Actions 
   ([#216](https://github.com/terraform-providers/terraform-provider-gitlab/issues/216))
 
+## 2.5.0-claranet1 (February 20, 2020)
+
+Based on official 2.5.0 tag, only differences are:
+
+FEATURES:
+* **New Resource:** `gitlab_group_members`
+
+ENHANCEMENTS:
+* Add `branches_to_be_notified` to gitlab service Slack and deprecate `branches_to_be_notified` ([#242](https://github.com/terraform-providers/terraform-provider-gitlab/pull/242))
+
+BUGFIX:
+* Force recreate `gitlab_group` when not found on read ([#240](https://github.com/terraform-providers/terraform-provider-gitlab/pull/240))
+
+## 2.5.0-claranet (December 09, 2019)
+
+Based on official 2.5.0 tag, only differences are:
+
+FEATURES:
+* **New Resource:** `gitlab_group_members`
+
 ## 2.5.0 (December 05, 2019)
 
 ENHANCEMENTS:
