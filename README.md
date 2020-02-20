@@ -6,10 +6,12 @@ Terraform Provider for Gitlab
 - [Documentation](https://www.terraform.io/docs/providers/gitlab/index.html)
 - [![Gitter chat](https://badges.gitter.im/hashicorp-terraform/Lobby.png)](https://gitter.im/hashicorp-terraform/Lobby)
 - Mailing list: [Google Groups](http://groups.google.com/group/terraform-tool)
-- Build status:
+- Upstream build status:
   - ![Unit Tests](https://github.com/terraform-providers/terraform-provider-gitlab/workflows/Unit%20Tests/badge.svg?branch=master)
   - ![Acceptance Tests](https://github.com/terraform-providers/terraform-provider-gitlab/workflows/Acceptance%20Tests/badge.svg?branch=master)
   - ![Website Build](https://github.com/terraform-providers/terraform-provider-gitlab/workflows/Website%20Build/badge.svg?branch=master)
+- Claranet fork build status:
+  - ![Unit Tests](https://github.com/claranet/terraform-provider-gitlab/workflows/Test%20and%20release/badge.svg?branch=claranet)
 
 Requirements
 ------------
