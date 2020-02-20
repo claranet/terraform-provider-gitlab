@@ -29,14 +29,12 @@ builds:
       - goos: freebsd
         goarch: arm
 
-archive:
-  format: zip
-  files:
-  - none*
+archives:
+  - format: zip
+    files:
+      - none*
 
 release:
-  draft: true
-
   github:
     owner: claranet
     name: terraform-provider-gitlab
