@@ -55,6 +55,13 @@ BUGFIXES:
 * Implement `masked` parameters for `gitlab_group_variable`
   ([#271](https://github.com/terraform-providers/terraform-provider-gitlab/issues/271))
 
+## 2.6.0-claranet (Unreleased)
+
+Based on official 2.6.0 tag, only differences are:
+
+FEATURES:
+* **New Resource:** `gitlab_group_members`
+
 ## 2.6.0 (April 08, 2020)
 
 ENHANCEMENTS:
