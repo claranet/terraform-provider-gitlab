@@ -16,6 +16,9 @@ func resourceGitlabUserImpersonationToken() *schema.Resource {
 		Create: resourceGitlabUserImpersonationTokenCreate,
 		Read:   resourceGitlabUserImpersonationTokenRead,
 		Delete: resourceGitlabUserImpersonationTokenDelete,
+		Importer: &schema.ResourceImporter{
+			State: schema.ImportStatePassthrough,
+		},
 
 		Schema: map[string]*schema.Schema{
 			"user": {
