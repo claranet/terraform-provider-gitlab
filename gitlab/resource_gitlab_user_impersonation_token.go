@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
@@ -90,19 +91,20 @@ func resourceGitlabUserImpersonationTokenCreate(d *schema.ResourceData, meta int
 		return err
 	}
 
-	d.SetId(fmt.Sprintf("%d", impersonationToken.ID))
+	d.SetId(fmt.Sprintf("%d/%d", user, impersonationToken.ID))
 
 	return resourceGitlabUserImpersonationTokenRead(d, meta)
 }
 
 func resourceGitlabUserImpersonationTokenRead(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*gitlab.Client)
-	user := d.Get("user").(int)
-	tokenId, err := strconv.Atoi(d.Id())
+	usertoken := strings.Split(d.Id(), "/")
+	userId, err := strconv.Atoi(usertoken[0])
+	tokenId, err := strconv.Atoi(usertoken[1])
 
-	log.Printf("[DEBUG] read gitlab user impersonation token %d/%d", user, tokenId)
+	log.Printf("[DEBUG] read gitlab user impersonation token %d/%d", userId, tokenId)
 
-	impersonationToken, _, err := client.Users.GetImpersonationToken(user, tokenId)
+	impersonationToken, _, err := client.Users.GetImpersonationToken(userId, tokenId)
 	if err != nil {
 		return err
 	}
@@ -122,11 +124,12 @@ func resourceGitlabUserImpersonationTokenRead(d *schema.ResourceData, meta inter
 // so the object still exists on Gitlab side, but we remove it from TF state
 func resourceGitlabUserImpersonationTokenDelete(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*gitlab.Client)
-	user := d.Get("user").(int)
-	tokenId, err := strconv.Atoi(d.Id())
+	usertoken := strings.Split(d.Id(), "/")
+	userId, err := strconv.Atoi(usertoken[0])
+	tokenId, err := strconv.Atoi(usertoken[1])
 
-	log.Printf("[DEBUG] delete (revoke) gitlab user impersonation token %d/%d", user, tokenId)
+	log.Printf("[DEBUG] delete (revoke) gitlab user impersonation token %d/%d", userId, tokenId)
 
-	_, err = client.Users.RevokeImpersonationToken(user, tokenId)
+	_, err = client.Users.RevokeImpersonationToken(userId, tokenId)
 	return err
 }
