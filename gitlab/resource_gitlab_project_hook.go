@@ -118,7 +118,6 @@ func resourceGitlabProjectHookRead(d *schema.ResourceData, meta interface{}) err
 	if err != nil {
 		return err
 	}
-
 	log.Printf("[DEBUG] read gitlab project hook %s/%d", project, hookId)
 
 	hook, _, err := client.Projects.GetProjectHook(project, hookId)
