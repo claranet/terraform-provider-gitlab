@@ -143,8 +143,10 @@ func testAccCheckGitlabUserImpersonationTokenAttributes(token *gitlab.Impersonat
 			return fmt.Errorf("got revoked %t; want %t", token.Revoked, want.Revoked)
 		}
 
-		if token.ExpiresAt.String() != want.ExpiresAt.String() {
-			return fmt.Errorf("got expires %q; want %q", token.ExpiresAt, want.ExpiresAt)
+		if want.ExpiresAt != nil {
+			if token.ExpiresAt.String() != want.ExpiresAt.String() {
+				return fmt.Errorf("got expires %q; want %q", token.ExpiresAt, want.ExpiresAt)
+			}
 		}
 
 		return nil
