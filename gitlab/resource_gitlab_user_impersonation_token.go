@@ -18,7 +18,7 @@ func resourceGitlabUserImpersonationToken() *schema.Resource {
 		Delete: resourceGitlabUserImpersonationTokenDelete,
 
 		Schema: map[string]*schema.Schema{
-			"user": {
+			"user_i_idd": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
