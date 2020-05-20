@@ -18,8 +18,8 @@ func resourceGitlabUserImpersonationToken() *schema.Resource {
 		Delete: resourceGitlabUserImpersonationTokenDelete,
 
 		Schema: map[string]*schema.Schema{
-			"user_i_idd": {
-				Type:     schema.TypeString,
+			"user": {
+				Type:     schema.TypeInt,
 				Required: true,
 				ForceNew: true,
 			},
@@ -66,7 +66,7 @@ func resourceGitlabUserImpersonationToken() *schema.Resource {
 
 func resourceGitlabUserImpersonationTokenCreate(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*gitlab.Client)
-	user := d.Get("user_id").(int)
+	user := d.Get("user").(int)
 	options := &gitlab.CreateImpersonationTokenOptions{
 		Name: gitlab.String(d.Get("name").(string)),
 	}
@@ -94,7 +94,7 @@ func resourceGitlabUserImpersonationTokenCreate(d *schema.ResourceData, meta int
 
 func resourceGitlabUserImpersonationTokenRead(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*gitlab.Client)
-	user := d.Get("user_id").(int)
+	user := d.Get("user").(int)
 	tokenId, err := strconv.Atoi(d.Id())
 
 	log.Printf("[DEBUG] read gitlab user impersonation token %d/%d", user, tokenId)
@@ -119,7 +119,7 @@ func resourceGitlabUserImpersonationTokenRead(d *schema.ResourceData, meta inter
 // so the object still exists on Gitlab side, but we remove it from TF state
 func resourceGitlabUserImpersonationTokenDelete(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*gitlab.Client)
-	user := d.Get("user_id").(int)
+	user := d.Get("user").(int)
 	tokenId, err := strconv.Atoi(d.Id())
 
 	log.Printf("[DEBUG] delete (revoke) gitlab user impersonation token %d/%d", user, tokenId)

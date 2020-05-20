@@ -81,7 +81,7 @@ func testAccCheckGitlabUserImpersonationTokenExists(n string, token *gitlab.Impe
 			return fmt.Errorf("No token ID is set")
 		}
 
-		userID := rs.Primary.Attributes["user_id"]
+		userID := rs.Primary.Attributes["user"]
 		if userID == "" {
 			return fmt.Errorf("No user ID is set")
 		}
@@ -106,7 +106,7 @@ func testAccGitlabUserImpersonationTokenDestroy(s *terraform.State) error {
 			continue
 		}
 
-		userID := rs.Primary.Attributes["user_id"]
+		userID := rs.Primary.Attributes["user"]
 
 		token_id, err := strconv.Atoi(rs.Primary.ID)
 		user_id, err := strconv.Atoi(userID)
@@ -143,8 +143,8 @@ func testAccCheckGitlabUserImpersonationTokenAttributes(token *gitlab.Impersonat
 			return fmt.Errorf("got revoked %t; want %t", token.Revoked, want.Revoked)
 		}
 
-		if token.ExpiresAt != want.ExpiresAt {
-			return fmt.Errorf("got revoked %q; want %q", token.ExpiresAt, want.ExpiresAt)
+		if token.ExpiresAt.String() != want.ExpiresAt.String() {
+			return fmt.Errorf("got expires %q; want %q", token.ExpiresAt, want.ExpiresAt)
 		}
 
 		return nil
