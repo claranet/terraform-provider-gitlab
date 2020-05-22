@@ -92,6 +92,8 @@ func resourceGitlabUserImpersonationTokenCreate(d *schema.ResourceData, meta int
 	}
 
 	d.SetId(fmt.Sprintf("%d/%d", user, impersonationToken.ID))
+	// We need to set token here instead of read, as it is only returned once
+	d.Set("token", impersonationToken.Token)
 
 	return resourceGitlabUserImpersonationTokenRead(d, meta)
 }
@@ -109,6 +111,7 @@ func resourceGitlabUserImpersonationTokenRead(d *schema.ResourceData, meta inter
 		return err
 	}
 
+	d.Set("user", userId)
 	d.Set("name", impersonationToken.Name)
 	d.Set("active", impersonationToken.Active)
 	d.Set("revoked", impersonationToken.Revoked)

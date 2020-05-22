@@ -3,6 +3,7 @@ package gitlab
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -87,9 +88,10 @@ func testAccCheckGitlabUserImpersonationTokenExists(n string, token *gitlab.Impe
 		}
 		conn := testAccProvider.Meta().(*gitlab.Client)
 
-		token_id, err := strconv.Atoi(tokenID)
-		user_id, err := strconv.Atoi(userID)
-		gotToken, _, err := conn.Users.GetImpersonationToken(user_id, token_id, nil)
+		usertoken := strings.Split(rs.Primary.ID, "/")
+		userId, err := strconv.Atoi(usertoken[0])
+		tokenId, err := strconv.Atoi(usertoken[1])
+		gotToken, _, err := conn.Users.GetImpersonationToken(userId, tokenId, nil)
 		if err != nil {
 			return err
 		}
@@ -106,12 +108,11 @@ func testAccGitlabUserImpersonationTokenDestroy(s *terraform.State) error {
 			continue
 		}
 
-		userID := rs.Primary.Attributes["user"]
+		usertoken := strings.Split(rs.Primary.ID, "/")
+		userId, err := strconv.Atoi(usertoken[0])
+		tokenId, err := strconv.Atoi(usertoken[1])
 
-		token_id, err := strconv.Atoi(rs.Primary.ID)
-		user_id, err := strconv.Atoi(userID)
-
-		token, resp, err := conn.Users.GetImpersonationToken(user_id, token_id, nil)
+		token, resp, err := conn.Users.GetImpersonationToken(userId, tokenId, nil)
 		if err == nil {
 			if token != nil && fmt.Sprintf("%d", token.ID) == rs.Primary.ID && token.Revoked == false {
 				return fmt.Errorf("Impersonation token still exists")
