@@ -44,3 +44,13 @@ The resource exports the following attributes:
 * `active` (Boolean) Is the token active or expired
 * `revoked` (Boolean) Has the token been revoked
 * `created_ad` Time of token creation
+* `token` The impersonation token, will only be exported if resource has been created through terraform, but not in case of import.
+
+## Importing user impersonation token
+
+You can import an impersonation token to terraform state using `terraform import <resource> <id>`.
+The `id` must be formated like `<user_id>/<token_id>`, for example:
+
+    terraform import gitlab_user_impersonation_token.example 21/25
+
+Note: When importing impersonation token, Gitlab do not send the token itself, so terraform won't be able to access it.

@@ -28,7 +28,7 @@ func TestAccGitlabUserImpersonationToken_basic(t *testing.T) {
 				Config: testAccGitlabUserImpersonationTokenConfig(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabUserImpersonationTokenExists("gitlab_user_impersonation_token.bar", &token),
-					testAccCheckGitlabUserImpersonationTokenAttributes(&token, &testAccCheckGitlabUserImpersonationTokenExpectedAttributes{
+					testAccCheckGitlabUserImpersonationTokenAttributes("gitlab_user_impersonation_token.bar", &token, &testAccCheckGitlabUserImpersonationTokenExpectedAttributes{
 						Name:    fmt.Sprintf("Token bar %d", rInt),
 						Active:  true,
 						Scopes:  []string{"api"},
@@ -57,7 +57,7 @@ func TestAccGitlabUserImpersonationToken_withexpiration(t *testing.T) {
 				Config: testAccGitlabUserImpersonationTokenWithExpirationConfig(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabUserImpersonationTokenExists("gitlab_user_impersonation_token.will_expire", &token),
-					testAccCheckGitlabUserImpersonationTokenAttributes(&token, &testAccCheckGitlabUserImpersonationTokenExpectedAttributes{
+					testAccCheckGitlabUserImpersonationTokenAttributes("gitlab_user_impersonation_token.will_expire", &token, &testAccCheckGitlabUserImpersonationTokenExpectedAttributes{
 						Name:      fmt.Sprintf("Token will_expire %d", rInt),
 						Active:    true,
 						Scopes:    []string{"api", "read_user"},
@@ -65,6 +65,40 @@ func TestAccGitlabUserImpersonationToken_withexpiration(t *testing.T) {
 						ExpiresAt: &iso_d,
 					}),
 				),
+			},
+		},
+	})
+}
+
+func TestAccGitlabUserImpersonationToken_import(t *testing.T) {
+	var token gitlab.ImpersonationToken
+	rInt := acctest.RandInt()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccGitlabUserImpersonationTokenDestroy,
+		Steps: []resource.TestStep{
+			// Create a user and impersonation token
+			// gitlab_user is already tested as part of `resource_gitlab_user`
+			{
+				Config: testAccGitlabUserImpersonationTokenConfig(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabUserImpersonationTokenExists("gitlab_user_impersonation_token.bar", &token),
+					testAccCheckGitlabUserImpersonationTokenAttributes("gitlab_user_impersonation_token.bar", &token, &testAccCheckGitlabUserImpersonationTokenExpectedAttributes{
+						Name:    fmt.Sprintf("Token bar %d", rInt),
+						Active:  true,
+						Scopes:  []string{"api"},
+						Revoked: false,
+					}),
+				),
+			},
+			{
+				ResourceName:      "gitlab_user_impersonation_token.bar",
+				ImportState:       true,
+				ImportStateVerify: true,
+				// the API can't serve these fields, so ignore them
+				ImportStateVerifyIgnore: []string{"token"},
 			},
 		},
 	})
@@ -134,8 +168,12 @@ type testAccCheckGitlabUserImpersonationTokenExpectedAttributes struct {
 	ExpiresAt *gitlab.ISOTime
 }
 
-func testAccCheckGitlabUserImpersonationTokenAttributes(token *gitlab.ImpersonationToken, want *testAccCheckGitlabUserImpersonationTokenExpectedAttributes) resource.TestCheckFunc {
+func testAccCheckGitlabUserImpersonationTokenAttributes(n string, token *gitlab.ImpersonationToken, want *testAccCheckGitlabUserImpersonationTokenExpectedAttributes) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[n]
+		if !ok {
+			return fmt.Errorf("Not Found: %s", n)
+		}
 		if token.Name != want.Name {
 			return fmt.Errorf("got name %q; want %q", token.Name, want.Name)
 		}
@@ -150,6 +188,9 @@ func testAccCheckGitlabUserImpersonationTokenAttributes(token *gitlab.Impersonat
 			}
 		}
 
+		if !token.Revoked && rs.Primary.Attributes["token"] == "" {
+			return fmt.Errorf("token should be defined but is empty.")
+		}
 		return nil
 	}
 }

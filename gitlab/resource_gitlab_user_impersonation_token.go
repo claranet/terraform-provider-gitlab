@@ -115,11 +115,9 @@ func resourceGitlabUserImpersonationTokenRead(d *schema.ResourceData, meta inter
 	d.Set("name", impersonationToken.Name)
 	d.Set("active", impersonationToken.Active)
 	d.Set("revoked", impersonationToken.Revoked)
-	d.Set("token", impersonationToken.Token)
 	d.Set("scopes", impersonationToken.Scopes)
 	d.Set("created_at", impersonationToken.CreatedAt)
 	d.Set("expires_at", impersonationToken.ExpiresAt)
-
 	return nil
 }
 
