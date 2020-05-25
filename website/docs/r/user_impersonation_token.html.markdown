@@ -43,7 +43,7 @@ The resource exports the following attributes:
 * `id` The unique id given by the Gitlab server.
 * `active` (Boolean) Is the token active or expired
 * `revoked` (Boolean) Has the token been revoked
-* `created_ad` Time of token creation
+* `created_at` Time of token creation
 * `token` The impersonation token, will only be exported if resource has been created through terraform, but not in case of import.
 
 ## Importing user impersonation token
