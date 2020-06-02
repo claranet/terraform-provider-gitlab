@@ -92,7 +92,6 @@ In order to run the full suite of acceptance tests, export the environment varia
 
 - `GITLAB_TOKEN` //token for account with admin priviliges
 - `GITLAB_BASE_URL` //URL with api part e.g. `http://localhost:8929/api/v4/`
-- `GITLAB_USER_ID` //ID of the user running tests. Needed for `resource_gitlab_group_members` tests
 
 and run `make testacc`.
 
