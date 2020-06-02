@@ -20,6 +20,15 @@ BUGFIXES:
 * Creating custom skip function for group_ldap_link tests.
   ([#328](https://github.com/terraform-providers/terraform-provider-gitlab/issues/328))
 
+## 2.9.0-claranet (June 02, 2020)
+
+Based on official 2.9.0 tag, only differences are:
+
+FEATURES:
+* **New Resource:** `gitlab_group_members`
+* **New Resource:** `gitlab_user_impersonation_token`
+* Implement `subgroup_creation_level` and `project_creation_level` parameters for `gitlab_group`
+
 ## 2.9.0 (June 01, 2020)
 
 FEATURES:
@@ -54,13 +63,6 @@ BUGFIXES:
 
 * Implement `masked` parameters for `gitlab_group_variable`
   ([#271](https://github.com/terraform-providers/terraform-provider-gitlab/issues/271))
-
-## 2.6.0-claranet (Unreleased)
-
-Based on official 2.6.0 tag, only differences are:
-
-FEATURES:
-* **New Resource:** `gitlab_group_members`
 
 ## 2.6.0 (April 08, 2020)
 
