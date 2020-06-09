@@ -48,6 +48,15 @@ func TestAccDataSourceGitlabUsers_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("data.gitlab_users.foo", "users.#", "99"),
 				),
 			},
+			{
+				Config: testAccDataSourceGitlabExternalUsers(),
+			},
+			{
+				Config: testAccDataSourceGitlabExternalUsersSearch(),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("data.gitlab_users.foo", "users.#", "49"),
+				),
+			},
 		},
 	})
 }
@@ -140,4 +149,25 @@ data "gitlab_users" "foo" {
 	search = "lots"
 }
 	`, testAccDataSourceGitlabLotsOfUsers())
+}
+
+func testAccDataSourceGitlabExternalUsers() string {
+	return fmt.Sprintf(`
+resource "gitlab_user" "foo" {
+  name             = format("lots user%%02d", count.index+1)
+  username         = format("user%%02d", count.index+1)
+  email            = format("user%%02d@example.com", count.index+1)
+  password         = "8characters"
+  external         = ((count.index + 1) % 2 == 0)
+  count            = 99
+}
+`)
+}
+
+func testAccDataSourceGitlabExternalUsersSearch() string {
+	return fmt.Sprintf(`%v
+data "gitlab_users" "foo" {
+	external = true
+}
+	`, testAccDataSourceGitlabExternalUsers())
 }

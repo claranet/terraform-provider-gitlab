@@ -41,6 +41,10 @@ func dataSourceGitlabUsers() *schema.Resource {
 				Type:     schema.TypeBool,
 				Optional: true,
 			},
+			"external": {
+				Type:     schema.TypeBool,
+				Optional: true,
+			},
 			"extern_uid": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -278,6 +282,12 @@ func expandGitlabUsersOptions(d *schema.ResourceData) (*gitlab.ListUsersOptions,
 		blocked := data.(bool)
 		listUsersOptions.Blocked = &blocked
 		optionsHash.WriteString(strconv.FormatBool(blocked))
+	}
+	optionsHash.WriteString(",")
+	if data, ok := d.GetOk("external"); ok {
+		external := data.(bool)
+		listUsersOptions.external = &external
+		optionsHash.WriteString(strconv.FormatBool(external))
 	}
 	optionsHash.WriteString(",")
 	if data, ok := d.GetOk("extern_uid"); ok {
