@@ -286,7 +286,7 @@ func expandGitlabUsersOptions(d *schema.ResourceData) (*gitlab.ListUsersOptions,
 	optionsHash.WriteString(",")
 	if data, ok := d.GetOk("external"); ok {
 		external := data.(bool)
-		listUsersOptions.external = &external
+		listUsersOptions.External = &external
 		optionsHash.WriteString(strconv.FormatBool(external))
 	}
 	optionsHash.WriteString(",")

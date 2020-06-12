@@ -32,6 +32,8 @@ The following arguments are supported:
 
 * `blocked` - (Optional) Filter users that are blocked.
 
+* `external` - (Optional) Filter users that are external.
+
 * `order_by` - (Optional) Order the users' list by `id`, `name`, `username`, `created_at` or `updated_at`. (Requires administrator privileges)
 
 * `sort` - (Optional) Sort users' list in asc or desc order. (Requires administrator privileges)

@@ -49,12 +49,12 @@ func TestAccDataSourceGitlabUsers_basic(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccDataSourceGitlabExternalUsers(),
+				Config: testAccDataSourceGitlabExternalUsers(rInt),
 			},
 			{
-				Config: testAccDataSourceGitlabExternalUsersSearch(),
+				Config: testAccDataSourceGitlabExternalUsersSearch(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("data.gitlab_users.foo", "users.#", "49"),
+					resource.TestCheckResourceAttr("data.gitlab_users.only_external", "users.#", "10"),
 				),
 			},
 		},
@@ -151,23 +151,29 @@ data "gitlab_users" "foo" {
 	`, testAccDataSourceGitlabLotsOfUsers())
 }
 
-func testAccDataSourceGitlabExternalUsers() string {
+func testAccDataSourceGitlabExternalUsers(rInt int) string {
 	return fmt.Sprintf(`
-resource "gitlab_user" "foo" {
-  name             = format("lots user%%02d", count.index+1)
-  username         = format("user%%02d", count.index+1)
-  email            = format("user%%02d@example.com", count.index+1)
+resource "gitlab_user" "external" {
+  name             = format("ext user%%02d%d", count.index+1)
+  username         = format("ext%%02d%d", count.index+1)
+  email            = format("ext%%02d%d@example.com", count.index+1)
   password         = "8characters"
-  external         = ((count.index + 1) % 2 == 0)
-  count            = 99
+  is_external      = true
+  count            = 10
 }
-`)
+resource "gitlab_user" "internal" {
+  name             = format("int user%%02d%d", count.index+1)
+  username         = format("int%%02d%d", count.index+1)
+  email            = format("int%%02d%d@example.com", count.index+1)
+  password         = "8characters"
+  count            = 10
+}`, rInt, rInt, rInt, rInt, rInt, rInt)
 }
 
-func testAccDataSourceGitlabExternalUsersSearch() string {
+func testAccDataSourceGitlabExternalUsersSearch(rInt int) string {
 	return fmt.Sprintf(`%v
-data "gitlab_users" "foo" {
+data "gitlab_users" "only_external" {
 	external = true
 }
-	`, testAccDataSourceGitlabExternalUsers())
+	`, testAccDataSourceGitlabExternalUsers(rInt))
 }
