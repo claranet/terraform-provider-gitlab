@@ -1,3 +1,16 @@
+## 2.11.0-claranet (July 27, 2020)
+
+Based on official 2.11.0 tag, only differences are:
+
+BREAKING:
+* The `gitlab_group_members` was refactored to eliminate spurious diff on its `members` field which was converted from a list to a set. Also, redundant top level fields were removed: `group_owner_id`, `access_level` and `expires_at`. Note: this only concerns the which is only available in Claranet fork for now, hence the non major release increment.
+
+FEATURES:
+* **New Resource:** `gitlab_group_members`
+* **New Resource:** `gitlab_user_impersonation_token`
+* Implement `subgroup_creation_level` and `project_creation_level` parameters for `gitlab_group` resource
+* Implement `external` filter in `gitlab_users` datasource
+
 ## 2.11.0 (July 24, 2020)
 
 ENHANCEMENTS:
