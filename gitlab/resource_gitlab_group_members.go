@@ -61,6 +61,7 @@ func schemaGroupMembersMembers() *schema.Resource {
 			"access_level": {
 				Type:     schema.TypeString,
 				Optional: true,
+				Computed: true,
 				ValidateFunc: validation.StringInSlice(
 					[]string{"guest", "reporter", "developer", "master", "owner", "maintainer"}, true),
 				DiffSuppressFunc: suppressDiffMembersAccessLevel(),
@@ -68,6 +69,7 @@ func schemaGroupMembersMembers() *schema.Resource {
 			"expires_at": {
 				Type:             schema.TypeString,
 				Optional:         true,
+				Computed:         true,
 				DiffSuppressFunc: suppressDiffMembersExpiresAt(),
 			},
 			"username": {
@@ -220,7 +222,7 @@ func listGitlabGroupMembers(d *schema.ResourceData, client *gitlab.Client) ([]*g
 
 	for i := 1; ; i++ {
 		listOptions.ListOptions.Page = i
-		groupMembersPart, resp, err := client.Groups.ListGroupMembers(d.Id(), listOptions)
+		groupMembersPage, resp, err := client.Groups.ListGroupMembers(d.Id(), listOptions)
 		if err != nil {
 			if resp.StatusCode == 404 {
 				d.SetId("")
@@ -230,7 +232,7 @@ func listGitlabGroupMembers(d *schema.ResourceData, client *gitlab.Client) ([]*g
 			return nil, err
 		}
 
-		groupMembers = append(groupMembers, groupMembersPart...)
+		groupMembers = append(groupMembers, groupMembersPage...)
 
 		if i >= resp.TotalPages {
 			break
@@ -242,9 +244,9 @@ func listGitlabGroupMembers(d *schema.ResourceData, client *gitlab.Client) ([]*g
 
 func expandGitlabAddGroupMembersOptions(d *schema.ResourceData) []*gitlab.AddGroupMemberOptions {
 	groupMembers := d.Get("members").(*schema.Set)
-	groupMemberOptions := []*gitlab.AddGroupMemberOptions{}
+	groupMemberOptions := make([]*gitlab.AddGroupMemberOptions, groupMembers.Len(), groupMembers.Len())
 
-	for _, config := range groupMembers.List() {
+	for i, config := range groupMembers.List() {
 		data := config.(map[string]interface{})
 		userID := data["id"].(int)
 
@@ -266,7 +268,7 @@ func expandGitlabAddGroupMembersOptions(d *schema.ResourceData) []*gitlab.AddGro
 			groupMemberOption.ExpiresAt = gitlab.String(d.Get("expires_at").(string))
 		}
 
-		groupMemberOptions = append(groupMemberOptions, groupMemberOption)
+		groupMemberOptions[i] = groupMemberOption
 	}
 
 	return groupMemberOptions

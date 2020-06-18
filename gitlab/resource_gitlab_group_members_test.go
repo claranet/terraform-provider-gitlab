@@ -27,8 +27,8 @@ func TestAccGitlabGroupMembers_basic(t *testing.T) {
 				Config: testAccGitlabGroupMembersUpdateConfig(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "members.#", "2"),
-					resource.TestCheckResourceAttr(resourceName, "members.3417451416.access_level", "guest"),
-					resource.TestCheckResourceAttr(resourceName, "members.3417451416.expires_at", "2099-01-01"),
+					resource.TestCheckResourceAttr(resourceName, "members.2922300817.access_level", "guest"),
+					resource.TestCheckResourceAttr(resourceName, "members.2922300817.expires_at", "2099-01-01"),
 				),
 			},
 			{
