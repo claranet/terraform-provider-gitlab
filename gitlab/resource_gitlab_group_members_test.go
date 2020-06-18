@@ -12,6 +12,7 @@ func TestAccGitlabGroupMembers_basic(t *testing.T) {
 	resourceName := "gitlab_group_members.test-group-members"
 	rInt := acctest.RandInt()
 
+	// TODO: add setup step to create first user
 	resource.Test(t, resource.TestCase{PreCheck: func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
@@ -19,23 +20,23 @@ func TestAccGitlabGroupMembers_basic(t *testing.T) {
 				Config: testAccGitlabGroupMembersConfig(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "members.#", "2"),
-					resource.TestCheckResourceAttr(resourceName, "members.1.access_level", "developer"),
+					resource.TestCheckResourceAttr(resourceName, "members.2031542183.access_level", "developer"),
 				),
 			},
 			{
 				Config: testAccGitlabGroupMembersUpdateConfig(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "members.#", "2"),
-					resource.TestCheckResourceAttr(resourceName, "members.1.access_level", "guest"),
-					resource.TestCheckResourceAttr(resourceName, "members.1.expires_at", "2099-01-01"),
+					resource.TestCheckResourceAttr(resourceName, "members.3417451416.access_level", "guest"),
+					resource.TestCheckResourceAttr(resourceName, "members.3417451416.expires_at", "2099-01-01"),
 				),
 			},
 			{
 				Config: testAccGitlabGroupMembersConfig(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "members.#", "2"),
-					resource.TestCheckResourceAttr(resourceName, "members.1.access_level", "developer"),
-					resource.TestCheckResourceAttr(resourceName, "members.1.expires_at", ""),
+					resource.TestCheckResourceAttr(resourceName, "members.3534297817.access_level", "developer"),
+					resource.TestCheckResourceAttr(resourceName, "members.3534297817.expires_at", ""),
 				),
 			},
 		},
@@ -61,7 +62,9 @@ resource "gitlab_group_members" "test-group-members" {
   }
 
   members {
-    id = gitlab_user.test-user.id
+    // Use the second user which should be the "Ghost User", created to hold all issues authored by
+    // users that have since been deleted. This user cannot be removed.
+    id = data.gitlab_users.all.users[1].id
   }
 }
 
@@ -71,14 +74,7 @@ resource "gitlab_group" "test-group" {
   description      = "Terraform acceptance tests - group members"
   visibility_level = "public"
 }
-
-resource "gitlab_user" "test-user" {
-  name     = "foo%d"
-  username = "listest%d"
-  password = "test%dtt"
-  email    = "listest%d@ssss.com"
-}
-`, rInt, rInt, rInt, rInt, rInt, rInt)
+`, rInt, rInt)
 }
 
 func testAccGitlabGroupMembersUpdateConfig(rInt int) string {
@@ -100,10 +96,11 @@ resource "gitlab_group_members" "test-group-members" {
   }
 
   members {
-    id         = "${gitlab_user.test-user.id}"
+    // Use the second user which should be the "Ghost User", created to hold all issues authored by
+    // users that have since been deleted. This user cannot be removed.
+    id         = data.gitlab_users.all.users[1].id
     expires_at = "2099-01-01"
   }
-
 }
 
 resource "gitlab_group" "test-group" {
@@ -112,12 +109,5 @@ resource "gitlab_group" "test-group" {
   description      = "Terraform acceptance tests - group members"
   visibility_level = "public"
 }
-
-resource "gitlab_user" "test-user" {
-  name     = "foo%d"
-  username = "listest%d"
-  password = "test%dtt"
-  email    = "listest%d@ssss.com"
-}
-`, rInt, rInt, rInt, rInt, rInt, rInt)
+`, rInt, rInt)
 }

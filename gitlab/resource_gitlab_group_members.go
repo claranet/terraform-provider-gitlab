@@ -42,43 +42,52 @@ func resourceGitlabGroupMembers() *schema.Resource {
 				Default:  "",
 			},
 			"members": {
-				Type: schema.TypeList,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"id": {
-							Type:     schema.TypeInt,
-							Required: true,
-						},
-						"access_level": {
-							Type:     schema.TypeString,
-							Optional: true,
-							ValidateFunc: validation.StringInSlice(
-								[]string{"guest", "reporter", "developer", "master", "owner", "maintainer"}, true),
-							DiffSuppressFunc: suppressDiffMembersAccessLevel(),
-						},
-						"expires_at": {
-							Type:             schema.TypeString,
-							Optional:         true,
-							DiffSuppressFunc: suppressDiffMembersExpiresAt(),
-						},
-						"username": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-						"name": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-						"state": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-					},
-				},
+				Type:     schema.TypeSet,
 				Required: true,
+				Elem:     schemaGroupMembersMembers(),
+				Set:      hashGroupMembersMembers(),
 			},
 		},
 	}
+}
+
+func schemaGroupMembersMembers() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"id": {
+				Type:     schema.TypeInt,
+				Required: true,
+			},
+			"access_level": {
+				Type:     schema.TypeString,
+				Optional: true,
+				ValidateFunc: validation.StringInSlice(
+					[]string{"guest", "reporter", "developer", "master", "owner", "maintainer"}, true),
+				DiffSuppressFunc: suppressDiffMembersAccessLevel(),
+			},
+			"expires_at": {
+				Type:             schema.TypeString,
+				Optional:         true,
+				DiffSuppressFunc: suppressDiffMembersExpiresAt(),
+			},
+			"username": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+			"name": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+			"state": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+		},
+	}
+}
+
+func hashGroupMembersMembers() schema.SchemaSetFunc {
+	return schema.HashResource(schemaGroupMembersMembers())
 }
 
 func resourceGitlabGroupMembersCreate(d *schema.ResourceData, meta interface{}) error {
@@ -118,6 +127,9 @@ func resourceGitlabGroupMembersRead(d *schema.ResourceData, meta interface{}) er
 	}
 
 	d.Set("members", flattenGitlabGroupMembers(groupMembers))
+
+	log.Printf("[DEBUG] show group members state to get hashes: %s", d.Get("members"))
+
 	d.Set("group_id", d.Id())
 
 	return nil
@@ -229,10 +241,10 @@ func listGitlabGroupMembers(d *schema.ResourceData, client *gitlab.Client) ([]*g
 }
 
 func expandGitlabAddGroupMembersOptions(d *schema.ResourceData) []*gitlab.AddGroupMemberOptions {
-	groupMembers := d.Get("members").([]interface{})
+	groupMembers := d.Get("members").(*schema.Set)
 	groupMemberOptions := []*gitlab.AddGroupMemberOptions{}
 
-	for _, config := range groupMembers {
+	for _, config := range groupMembers.List() {
 		data := config.(map[string]interface{})
 		userID := data["id"].(int)
 
@@ -306,10 +318,10 @@ func getGroupMembersUpdates(targetMembers []*gitlab.AddGroupMemberOptions,
 	return groupMembersToAdd, groupMembersToUpdate, currentMembers
 }
 
-func flattenGitlabGroupMembers(groupMembers []*gitlab.GroupMember) []interface{} {
-	groupMembersList := []interface{}{}
+func flattenGitlabGroupMembers(groupMembers []*gitlab.GroupMember) *schema.Set {
+	att := make([]interface{}, len(groupMembers), len(groupMembers))
 
-	for _, groupMember := range groupMembers {
+	for i, groupMember := range groupMembers {
 		values := map[string]interface{}{
 			"id":           groupMember.ID,
 			"access_level": accessLevelValueToName[groupMember.AccessLevel],
@@ -322,12 +334,10 @@ func flattenGitlabGroupMembers(groupMembers []*gitlab.GroupMember) []interface{}
 			values["expires_at"] = groupMember.ExpiresAt.String()
 		}
 
-		// Append in order to get group members from the first added
-		// to the last (and get cleaner plan diff)
-		groupMembersList = append(groupMembersList, values)
+		att[i] = values
 	}
 
-	return groupMembersList
+	return schema.NewSet(hashGroupMembersMembers(), att)
 }
 
 func suppressDiffMembersAccessLevel() schema.SchemaDiffSuppressFunc {
