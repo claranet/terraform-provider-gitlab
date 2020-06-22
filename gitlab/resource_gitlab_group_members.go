@@ -26,21 +26,6 @@ func resourceGitlabGroupMembers() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
-			"group_owner_id": {
-				Type:     schema.TypeInt,
-				Required: true,
-			},
-			"access_level": {
-				Type:     schema.TypeString,
-				Required: true,
-				ValidateFunc: validation.StringInSlice(
-					[]string{"guest", "reporter", "developer", "master", "owner", "maintainer"}, true),
-			},
-			"expires_at": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Default:  "",
-			},
 			"members": {
 				Type:     schema.TypeSet,
 				Required: true,
@@ -60,17 +45,15 @@ func schemaGroupMembersMembers() *schema.Resource {
 			},
 			"access_level": {
 				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
+				Required: true,
 				ValidateFunc: validation.StringInSlice(
 					[]string{"guest", "reporter", "developer", "master", "owner", "maintainer"}, true),
 				DiffSuppressFunc: suppressDiffMembersAccessLevel(),
 			},
 			"expires_at": {
-				Type:             schema.TypeString,
-				Optional:         true,
-				Computed:         true,
-				DiffSuppressFunc: suppressDiffMembersExpiresAt(),
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
 			},
 			"username": {
 				Type:     schema.TypeString,
@@ -96,19 +79,18 @@ func resourceGitlabGroupMembersCreate(d *schema.ResourceData, meta interface{}) 
 	client := meta.(*gitlab.Client)
 
 	groupID := d.Get("group_id").(string)
-	groupOwnerID := d.Get("group_owner_id").(int)
 	groupMembers := expandGitlabAddGroupMembersOptions(d)
 
 	for _, groupMember := range groupMembers {
 		log.Printf("[DEBUG] create gitlab group member %d in %s", groupMember.UserID, groupID)
 
-		// Group owner exists and can't be updated
-		if groupOwnerID == *groupMember.UserID {
-			continue
-		}
-
-		_, _, err := client.GroupMembers.AddGroupMember(groupID, groupMember)
+		_, resp, err := client.GroupMembers.AddGroupMember(groupID, groupMember)
 		if err != nil {
+			if resp.StatusCode == 409 {
+				// Gitlab will return a conflict status code if the user is already a member
+				log.Printf("[WARN] PDECAT got conflict for user: %d", groupMember.UserID)
+				continue
+			}
 			return err
 		}
 	}
@@ -250,38 +232,33 @@ func expandGitlabAddGroupMembersOptions(d *schema.ResourceData) []*gitlab.AddGro
 		data := config.(map[string]interface{})
 		userID := data["id"].(int)
 
-		groupMemberOption := &gitlab.AddGroupMemberOptions{
+		groupMemberOption := gitlab.AddGroupMemberOptions{
 			UserID: &userID,
 		}
 
 		if val := data["access_level"].(string); val != "" {
 			groupMemberOption.AccessLevel = gitlab.AccessLevel(
 				accessLevelNameToValue[strings.ToLower(val)])
-		} else {
-			groupMemberOption.AccessLevel = gitlab.AccessLevel(
-				accessLevelNameToValue[strings.ToLower(d.Get("access_level").(string))])
 		}
 
 		if val := data["expires_at"].(string); val != "" {
 			groupMemberOption.ExpiresAt = gitlab.String(val)
-		} else {
-			groupMemberOption.ExpiresAt = gitlab.String(d.Get("expires_at").(string))
 		}
 
-		groupMemberOptions[i] = groupMemberOption
+		groupMemberOptions[i] = &groupMemberOption
 	}
 
 	return groupMemberOptions
 }
 
-func findGroupMember(id int, groupMembers []*gitlab.GroupMember) (gitlab.GroupMember, int, error) {
+func findGroupMember(id int, groupMembers []*gitlab.GroupMember) (*gitlab.GroupMember, int, error) {
 	for i, groupMember := range groupMembers {
 		if groupMember.ID == id {
-			return *groupMember, i, nil
+			return groupMember, i, nil
 		}
 	}
 
-	return gitlab.GroupMember{}, 0, fmt.Errorf("Couldn't find group member: %d", id)
+	return &gitlab.GroupMember{}, 0, fmt.Errorf("Couldn't find group member: %d", id)
 }
 
 func getGroupMembersUpdates(targetMembers []*gitlab.AddGroupMemberOptions,
@@ -303,11 +280,9 @@ func getGroupMembersUpdates(targetMembers []*gitlab.AddGroupMemberOptions,
 
 		// If it exists but there's a change, it must be updated
 		if (*targetMember.AccessLevel != currentMember.AccessLevel) ||
-			(currentMember.ExpiresAt != nil &&
-				*targetMember.ExpiresAt !=
-					currentMember.ExpiresAt.String() ||
-				(currentMember.ExpiresAt == nil &&
-					*targetMember.ExpiresAt != "")) {
+			(currentMember.ExpiresAt != nil && targetMember.ExpiresAt == nil) ||
+			(currentMember.ExpiresAt == nil && targetMember.ExpiresAt != nil) ||
+			(currentMember.ExpiresAt != nil && targetMember.ExpiresAt != nil && *targetMember.ExpiresAt != currentMember.ExpiresAt.String()) {
 			groupMembersToUpdate = append(groupMembersToUpdate, targetMember)
 		}
 
@@ -334,6 +309,8 @@ func flattenGitlabGroupMembers(groupMembers []*gitlab.GroupMember) *schema.Set {
 
 		if groupMember.ExpiresAt != nil {
 			values["expires_at"] = groupMember.ExpiresAt.String()
+		} else {
+			values["expires_at"] = ""
 		}
 
 		att[i] = values
@@ -344,31 +321,9 @@ func flattenGitlabGroupMembers(groupMembers []*gitlab.GroupMember) *schema.Set {
 
 func suppressDiffMembersAccessLevel() schema.SchemaDiffSuppressFunc {
 	return func(k, old, new string, d *schema.ResourceData) bool {
-		// If access_level is not defined at members' level, use global
-		// access_level for comparison
-		if new == "" {
-			globalAccessLevel := d.Get("access_level") == old
-			// Suppress diff between deprecated "master" access level and its new name "maintainer"
-			masterAccessLevel := d.Get("access_level") == "master" && old == "maintainer"
-
-			return globalAccessLevel || masterAccessLevel
-		}
-
 		// Suppress diff between deprecated "master" access level and its new name "maintainer"
 		if new == "master" && old == "maintainer" {
 			return true
-		}
-
-		return false
-	}
-}
-
-func suppressDiffMembersExpiresAt() schema.SchemaDiffSuppressFunc {
-	return func(k, old, new string, d *schema.ResourceData) bool {
-		// If expires_at is not defined at members' level, use global
-		// expires_at for comparison
-		if new == "" {
-			return d.Get("expires_at") == old
 		}
 
 		return false
