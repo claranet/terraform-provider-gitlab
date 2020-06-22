@@ -111,9 +111,6 @@ func resourceGitlabGroupMembersRead(d *schema.ResourceData, meta interface{}) er
 	}
 
 	d.Set("members", flattenGitlabGroupMembers(groupMembers))
-
-	log.Printf("[DEBUG] show group members state to get hashes: %s", d.Get("members"))
-
 	d.Set("group_id", d.Id())
 
 	return nil
