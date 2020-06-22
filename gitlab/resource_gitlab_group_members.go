@@ -88,7 +88,7 @@ func resourceGitlabGroupMembersCreate(d *schema.ResourceData, meta interface{}) 
 		if err != nil {
 			if resp.StatusCode == 409 {
 				// Gitlab will return a conflict status code if the user is already a member
-				log.Printf("[WARN] PDECAT got conflict for user: %d", groupMember.UserID)
+				log.Printf("[DEBUG] got conflict for user: %d", groupMember.UserID)
 				continue
 			}
 			return err

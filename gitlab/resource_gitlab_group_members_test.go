@@ -12,10 +12,16 @@ func TestAccGitlabGroupMembers_basic(t *testing.T) {
 	resourceName := "gitlab_group_members.test-group-members"
 	rInt := acctest.RandInt()
 
-	// TODO: add setup step to create first user
 	resource.Test(t, resource.TestCase{PreCheck: func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
+			{
+				Config: testAccGitlabGroupMembersSetupUser(rInt),
+			},
+			{
+				Config:  "provider gitlab {}\n",
+				Destroy: true,
+			},
 			{
 				Config: testAccGitlabGroupMembersConfig(rInt),
 				Check: resource.ComposeTestCheckFunc(
@@ -58,6 +64,18 @@ func TestAccGitlabGroupMembers_basic(t *testing.T) {
 			},
 		},
 	})
+}
+
+func testAccGitlabGroupMembersSetupUser(rInt int) string {
+	return fmt.Sprintf(`
+// Create a random user to initialize the Gitlab "Ghost User"
+resource "gitlab_user" "test-user" {
+  name     = "foo%d"
+  username = "listest%d"
+  password = "test%dtt"
+  email    = "listest%d@ssss.com"
+}
+`, rInt, rInt, rInt, rInt)
 }
 
 func testAccGitlabGroupMembersConfig(rInt int) string {
