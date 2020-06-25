@@ -2,18 +2,15 @@ package gitlab
 
 import (
 	"fmt"
-	"log"
-	"strings"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	tfawsresource "github.com/terraform-providers/terraform-provider-gitlab/gitlab/internal/helpers"
 )
 
 func TestAccGitlabGroupMembers_basic(t *testing.T) {
 	resourceName := "gitlab_group_members.test-group-members"
-	userResourceName := "gitlab_user.test-user"
 	rInt := acctest.RandInt()
 
 	resource.Test(t, resource.TestCase{PreCheck: func() { testAccPreCheck(t) },
@@ -23,9 +20,11 @@ func TestAccGitlabGroupMembers_basic(t *testing.T) {
 				Config: testAccGitlabGroupMembersConfig(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "members.#", "2"),
-					resource.TestCheckResourceAttr(resourceName, "members.2667931517.access_level", "owner"),
-					resource.TestCheckResourceAttr(resourceName, "members.2667931517.expires_at", ""),
-					testCheckResourceAttrKeyedTypeSet(resourceName, userResourceName, "members", "id", map[string]string{
+					tfawsresource.TestCheckTypeSetElemNestedAttrs(resourceName, "members.*", map[string]string{
+						"access_level": "owner",
+						"expires_at":   "",
+					}),
+					tfawsresource.TestCheckTypeSetElemNestedAttrs(resourceName, "members.*", map[string]string{
 						"access_level": "developer",
 						"expires_at":   "",
 					}),
@@ -35,9 +34,11 @@ func TestAccGitlabGroupMembers_basic(t *testing.T) {
 				Config: testAccGitlabGroupMembersUpdateConfig(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "members.#", "2"),
-					resource.TestCheckResourceAttr(resourceName, "members.2667931517.access_level", "owner"),
-					resource.TestCheckResourceAttr(resourceName, "members.2667931517.expires_at", ""),
-					testCheckResourceAttrKeyedTypeSet(resourceName, userResourceName, "members", "id", map[string]string{
+					tfawsresource.TestCheckTypeSetElemNestedAttrs(resourceName, "members.*", map[string]string{
+						"access_level": "owner",
+						"expires_at":   "",
+					}),
+					tfawsresource.TestCheckTypeSetElemNestedAttrs(resourceName, "members.*", map[string]string{
 						"access_level": "guest",
 						"expires_at":   "2099-01-01",
 					}),
@@ -47,9 +48,11 @@ func TestAccGitlabGroupMembers_basic(t *testing.T) {
 				Config: testAccGitlabGroupMembersUpdateConfig2(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "members.#", "2"),
-					resource.TestCheckResourceAttr(resourceName, "members.2667931517.access_level", "owner"),
-					resource.TestCheckResourceAttr(resourceName, "members.2667931517.expires_at", ""),
-					testCheckResourceAttrKeyedTypeSet(resourceName, userResourceName, "members", "id", map[string]string{
+					tfawsresource.TestCheckTypeSetElemNestedAttrs(resourceName, "members.*", map[string]string{
+						"access_level": "owner",
+						"expires_at":   "",
+					}),
+					tfawsresource.TestCheckTypeSetElemNestedAttrs(resourceName, "members.*", map[string]string{
 						"access_level": "maintainer",
 						"expires_at":   "",
 					}),
@@ -59,9 +62,11 @@ func TestAccGitlabGroupMembers_basic(t *testing.T) {
 				Config: testAccGitlabGroupMembersConfig(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "members.#", "2"),
-					resource.TestCheckResourceAttr(resourceName, "members.2667931517.access_level", "owner"),
-					resource.TestCheckResourceAttr(resourceName, "members.2667931517.expires_at", ""),
-					testCheckResourceAttrKeyedTypeSet(resourceName, userResourceName, "members", "id", map[string]string{
+					tfawsresource.TestCheckTypeSetElemNestedAttrs(resourceName, "members.*", map[string]string{
+						"access_level": "owner",
+						"expires_at":   "",
+					}),
+					tfawsresource.TestCheckTypeSetElemNestedAttrs(resourceName, "members.*", map[string]string{
 						"access_level": "developer",
 						"expires_at":   "",
 					}),
@@ -69,49 +74,6 @@ func TestAccGitlabGroupMembers_basic(t *testing.T) {
 			},
 		},
 	})
-}
-
-// This custom testCheckResourceAttrKeyedTypeSet function may be reused in other use cases
-// where the hash of the set element cannot be determined in advance but the element in the
-// set can be identified by a key attribute.
-// Here, the user ID will not be stable because users are created/destroyed in undetermined
-// orders across test runs, so the hash of the member element will quite always change.
-// The new function also to dynamically get the test user's ID
-func testCheckResourceAttrKeyedTypeSet(resourceName, keyResourceName, setName, keyAttribute string, values map[string]string) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		ms := s.RootModule()
-		keyAttributeValue := ms.Resources[keyResourceName].Primary.Attributes[keyAttribute]
-		log.Printf("[DEBUG] Dynamic key attribute value: %#v", keyAttributeValue)
-
-		rs, ok := ms.Resources[resourceName]
-		if !ok {
-			return fmt.Errorf("Not found: %s in %s", resourceName, ms.Path)
-		}
-
-		is := rs.Primary
-		if is == nil {
-			return fmt.Errorf("No primary instance: %s in %s", resourceName, ms.Path)
-		}
-
-		for k, v := range is.Attributes {
-			addr := strings.Split(k, ".")
-			if len(addr) == 3 && addr[0] == setName && addr[2] == keyAttribute {
-				prefix := addr[0] + "." + addr[1]
-				if v == keyAttributeValue {
-					log.Printf("[DEBUG] Found matching %s: %#v, v: %#v", setName, k, v)
-					for k2, v2 := range values {
-						if is.Attributes[prefix+"."+k2] != v2 {
-							return fmt.Errorf("State content does not match for %s resource set %s with key attribute %s in %s", resourceName, setName, keyAttributeValue, ms.Path)
-						}
-					}
-					log.Printf("[DEBUG] Found matching %s attributes for key %s with value %s", setName, k, v)
-					return nil
-				}
-			}
-		}
-
-		return fmt.Errorf("State content does not match for %s in %s", resourceName, ms.Path)
-	}
 }
 
 func testAccGitlabGroupMembersConfig(rInt int) string {
